@@ -1,1111 +1,2199 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>SkillTiers</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&display=swap"
+    rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* ═══════════════════════════════
-       DESIGN TOKENS — MCTiers spirit
-       Dark, minimal, red accent, flat
-    ═══════════════════════════════ */
-    :root{
-      --bg:      #0d0d0d;
-      --bg1:     #111111;
-      --bg2:     #171717;
-      --bg3:     #1e1e1e;
-      --surface: #1a1a1a;
-      --border:  #2a2a2a;
-      --border2: #333;
-      --accent:  #e63946;
-      --accent-dim: #c1121f;
-      --accent-glow: rgba(230,57,70,.18);
-      --text:    #f1f1f1;
-      --text2:   #aaa;
-      --text3:   #666;
-      --gold:    #f4c542;
-      --silver:  #b0b8c1;
-      --bronze:  #cd7f32;
-      --s:       #e63946;
-      --a:       #f4a261;
-      --b:       #e9c46a;
-      --c:       #2a9d8f;
-      --d:       #457b9d;
-      --e:       #9b5de5;
-      --f:       #555;
-      --radius:  6px;
-      --radius-sm: 4px;
-      --nav-h:   60px;
-      --bottom-h:64px;
-    }
-    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-    html,body{height:100%;}
-    body{
-      font-family:'Inter',system-ui,sans-serif;
-      background:var(--bg);color:var(--text);
-      font-size:14px;line-height:1.5;
-      padding-bottom:var(--bottom-h);
+    /* ─────────────────────────────────────────
+       DESIGN SYSTEM
+       - Background: #09090b (zinc-950)
+       - Surface:    #18181b (zinc-900)
+       - Border:     #27272a (zinc-800)
+       - Muted:      #3f3f46 (zinc-700)
+       - Text dim:   #71717a (zinc-500)
+       - Text:       #fafafa (zinc-50)
+       - Accent:     #06b6d4 (cyan-500)
+    ───────────────────────────────────────── */
+    :root {
+      --bg: #09090b;
+      --surface: #18181b;
+      --surface2: #1f1f23;
+      --border: #27272a;
+      --muted: #3f3f46;
+      --dim: #71717a;
+      --text: #fafafa;
+      --text2: #a1a1aa;
+      --cyan: #06b6d4;
+      --cyan-dim: rgba(6, 182, 212, .12);
+      --cyan-glow: rgba(6, 182, 212, .25);
+      --gold: #eab308;
+      --silver: #94a3b8;
+      --bronze: #b45309;
+      --r: 16px;
+      --r-sm: 8px;
+      --r-xs: 6px;
     }
 
-    /* ── SCROLLBAR ── */
-    ::-webkit-scrollbar{width:6px;height:6px;}
-    ::-webkit-scrollbar-track{background:var(--bg);}
-    ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
-
-    /* ── TOP NAV ── */
-    #top-nav{
-      position:sticky;top:0;z-index:80;
-      height:var(--nav-h);
-      background:var(--bg1);
-      border-bottom:1px solid var(--border);
-      display:flex;align-items:center;justify-content:space-between;
-      padding:0 20px;
-      gap:16px;
-    }
-    .wordmark{
-      font-size:1.2rem;font-weight:800;letter-spacing:-.5px;
-      color:var(--text);display:flex;align-items:center;gap:6px;user-select:none;
-    }
-    .wordmark .dot{color:var(--accent);}
-    #nav-right{display:flex;align-items:center;gap:10px;}
-    .btn-discord{
-      display:flex;align-items:center;gap:7px;
-      background:#5865F2;color:#fff;border:none;
-      border-radius:var(--radius);padding:7px 14px;
-      font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
-      cursor:pointer;transition:opacity .15s;
-      white-space:nowrap;
-    }
-    .btn-discord:hover{opacity:.85;}
-    .btn-discord svg{width:16px;height:16px;flex-shrink:0;}
-    #user-pill{display:flex;align-items:center;gap:8px;}
-    #avatar{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border2);}
-    #username{font-size:13px;font-weight:600;color:var(--text);}
-    .btn-out{
-      background:transparent;border:1px solid var(--border2);color:var(--text2);
-      border-radius:var(--radius);padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;
-      transition:border-color .15s,color .15s;
-    }
-    .btn-out:hover{border-color:var(--accent);color:var(--accent);}
-
-    /* ── TYPE TABS ── */
-    #type-tabs{
-      background:var(--bg1);
-      border-bottom:1px solid var(--border);
-      display:flex;align-items:center;padding:0 20px;gap:2px;
-      overflow-x:auto;scrollbar-width:none;
-    }
-    #type-tabs::-webkit-scrollbar{display:none;}
-    .type-tab{
-      display:flex;align-items:center;gap:6px;
-      padding:12px 16px;font-size:13px;font-weight:600;color:var(--text3);
-      border:none;background:transparent;cursor:pointer;
-      border-bottom:2px solid transparent;margin-bottom:-1px;
-      transition:color .15s,border-color .15s;white-space:nowrap;
-    }
-    .type-tab:hover{color:var(--text2);}
-    .type-tab.active{color:var(--text);border-bottom-color:var(--accent);}
-    .type-tab .tab-icon{font-size:1rem;}
-
-    /* ── LAYOUT ── */
-    #app{max-width:780px;margin:0 auto;padding:24px 16px 40px;}
-
-    /* ── SECTION ── */
-    .section{display:none;}
-    .section.visible{display:block;}
-
-    /* ── GUEST SPLASH ── */
-    #guest-splash{
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      min-height:calc(100vh - var(--nav-h) - 40px);
-      text-align:center;padding:40px 16px;
-    }
-    .splash-badge{
-      display:inline-block;background:var(--accent-glow);border:1px solid var(--accent);
-      color:var(--accent);border-radius:30px;padding:4px 14px;
-      font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
-      margin-bottom:20px;
-    }
-    #guest-splash h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:12px;}
-    #guest-splash h1 span{color:var(--accent);}
-    #guest-splash p{color:var(--text2);font-size:.95rem;max-width:400px;margin-bottom:32px;}
-    .feature-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-bottom:36px;}
-    .feature-chip{
-      background:var(--bg2);border:1px solid var(--border2);
-      border-radius:var(--radius);padding:6px 14px;
-      font-size:12px;font-weight:600;color:var(--text2);
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
-    /* ── SETTINGS BLOCK ── */
-    .settings-block{
-      background:var(--bg1);border:1px solid var(--border);
-      border-radius:var(--radius);padding:20px;margin-bottom:20px;
+    html {
+      height: 100%;
     }
-    .block-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:12px;}
-    .title-input{
-      width:100%;background:var(--bg2);border:1px solid var(--border2);
-      color:var(--text);border-radius:var(--radius);padding:10px 14px;
-      font-family:'Inter',sans-serif;font-size:15px;font-weight:600;outline:none;
-      transition:border-color .15s;
-    }
-    .title-input:focus{border-color:var(--accent);}
-    .title-input::placeholder{color:var(--text3);}
 
-    /* ── SECTION HEADER ── */
-    .sec-head{
-      display:flex;align-items:center;justify-content:space-between;
-      margin-bottom:16px;
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100%;
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
     }
-    .sec-title{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;}
-    .sec-meta{font-size:12px;color:var(--text3);}
-    .sec-meta.warn{color:var(--accent);}
 
-    /* ── DISPLAY TOGGLE ── */
-    .display-toggle{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:3px;gap:2px;margin-bottom:16px;width:fit-content;}
-    .disp-btn{
-      border:none;background:transparent;color:var(--text3);
-      border-radius:4px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;
-      transition:background .15s,color .15s;
+    ::selection {
+      background: var(--cyan-dim);
     }
-    .disp-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px #0006;}
 
-    /* ── ADD ROW ── */
-    .add-row{display:flex;gap:8px;margin-bottom:6px;}
-    .add-input{
-      flex:1;background:var(--bg2);border:1px solid var(--border2);
-      color:var(--text);border-radius:var(--radius);padding:8px 12px;
-      font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .15s;
-      min-width:0;
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
     }
-    .add-input:focus{border-color:var(--accent);}
-    .add-input::placeholder{color:var(--text3);}
-    .btn-add{
-      background:var(--accent);color:#fff;border:none;border-radius:var(--radius);
-      padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;
-      white-space:nowrap;transition:opacity .15s;
-    }
-    .btn-add:hover{opacity:.85;}
 
-    /* ── RANKED TABLE ── */
-    #ranked-table{width:100%;}
-    .r-header{
-      display:grid;grid-template-columns:48px 1fr 72px;
-      padding:6px 12px;border-bottom:1px solid var(--border);
-      font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);
+    ::-webkit-scrollbar-track {
+      background: transparent;
     }
-    .ranked-row{
-      display:grid;grid-template-columns:48px 1fr 72px;
-      align-items:center;padding:10px 12px;
-      border-bottom:1px solid var(--border);
-      cursor:grab;transition:background .1s;
-      user-select:none;
-    }
-    .ranked-row:last-child{border-bottom:none;}
-    .ranked-row:hover{background:var(--bg2);}
-    .ranked-row.dragging{opacity:.4;background:var(--bg3);}
-    .ranked-row.drag-over{background:var(--accent-glow);border-bottom-color:var(--accent);}
-    .r-rank{
-      font-size:13px;font-weight:700;
-      display:flex;align-items:center;gap:6px;
-    }
-    .r-rank.gold{color:var(--gold);}
-    .r-rank.silver{color:var(--silver);}
-    .r-rank.bronze{color:var(--bronze);}
-    .r-rank.plain{color:var(--text3);}
-    .rank-num{font-variant-numeric:tabular-nums;min-width:22px;}
-    .r-name{font-size:14px;font-weight:600;color:var(--text);}
-    .r-actions{display:flex;align-items:center;justify-content:flex-end;gap:4px;opacity:0;transition:opacity .15s;}
-    .ranked-row:hover .r-actions{opacity:1;}
-    .icon-btn{
-      background:none;border:none;cursor:pointer;
-      color:var(--text3);padding:4px 6px;border-radius:4px;font-size:12px;
-      transition:background .1s,color .1s;
-    }
-    .icon-btn:hover{background:var(--bg3);color:var(--text);}
-    .icon-btn.del:hover{color:var(--accent);}
 
-    /* ── THRONE VIEW ── */
-    #throne-wrap{display:none;}
-    .podium-stage{
-      display:flex;align-items:flex-end;justify-content:center;
-      gap:4px;margin-bottom:24px;
-      padding:32px 0 0;
+    ::-webkit-scrollbar-thumb {
+      background: var(--muted);
+      border-radius: 99px;
     }
-    .podium-col{display:flex;flex-direction:column;align-items:center;}
-    .podium-name{
-      font-size:12px;font-weight:700;margin-bottom:6px;text-align:center;
-      max-width:90px;word-break:break-word;line-height:1.3;
-    }
-    .podium-crown{font-size:1.6rem;margin-bottom:4px;}
-    .podium-block{
-      display:flex;align-items:center;justify-content:center;
-      font-size:13px;font-weight:800;letter-spacing:.5px;
-      border-radius:4px 4px 0 0;
-    }
-    .podium-1 .podium-block{
-      width:110px;height:120px;
-      background:linear-gradient(180deg,#f4c54222,#f4c54211);
-      border:1px solid var(--gold);border-bottom:none;
-      color:var(--gold);
-    }
-    .podium-2 .podium-block{
-      width:90px;height:88px;
-      background:linear-gradient(180deg,#b0b8c122,#b0b8c111);
-      border:1px solid var(--silver);border-bottom:none;
-      color:var(--silver);
-    }
-    .podium-3 .podium-block{
-      width:80px;height:66px;
-      background:linear-gradient(180deg,#cd7f3222,#cd7f3211);
-      border:1px solid var(--bronze);border-bottom:none;
-      color:var(--bronze);
-    }
-    .podium-floor{
-      height:2px;background:var(--border2);width:100%;
-    }
-    #throne-rest-list{margin-top:0;}
 
-    /* ── TIER EDITOR ── */
-    #pool-wrap{margin-bottom:16px;}
-    .pool-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);margin-bottom:8px;}
-    #unranked-pool{
-      display:flex;flex-wrap:wrap;gap:6px;padding:12px;min-height:48px;
-      background:var(--bg2);border:1px dashed var(--border2);border-radius:var(--radius);
-      transition:border-color .15s;
+    /* ── NAV ───────────────────────────────── */
+    #nav {
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      height: 56px;
+      background: rgba(9, 9, 11, .85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
     }
-    #unranked-pool.drag-active{border-color:var(--accent);}
-    #unranked-pool .empty-pool{color:var(--text3);font-size:12px;}
 
-    .chip{
-      display:inline-flex;align-items:center;gap:5px;
-      background:var(--bg3);border:1px solid var(--border2);
-      border-radius:var(--radius-sm);padding:4px 10px;
-      font-size:13px;font-weight:600;cursor:grab;
-      transition:border-color .15s,opacity .15s;color:var(--text);
+    .nav-logo {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -.4px;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 3px;
     }
-    .chip:hover{border-color:var(--border2);}
-    .chip.dragging{opacity:.35;}
-    .chip-del{
-      background:none;border:none;color:var(--text3);cursor:pointer;
-      font-size:11px;padding:0;line-height:1;
-      transition:color .1s;
-    }
-    .chip-del:hover{color:var(--accent);}
 
-    /* ── TIER ROWS ── */
-    .tier-row{
-      display:flex;align-items:stretch;
-      border-bottom:1px solid var(--border);
-      min-height:52px;transition:background .1s;
+    .nav-logo-dot {
+      color: var(--cyan);
     }
-    .tier-row:first-child{border-top:1px solid var(--border);}
-    .tier-row.drag-active{background:var(--bg2);}
-    .tier-label-cell{
-      width:52px;min-width:52px;
-      display:flex;align-items:center;justify-content:center;
-      font-size:1.1rem;font-weight:800;
-      border-right:1px solid var(--border);flex-shrink:0;
-    }
-    .tier-items-cell{
-      flex:1;display:flex;flex-wrap:wrap;align-items:center;
-      gap:5px;padding:8px 12px;min-height:52px;
-    }
-    /* tier colors */
-    .tier-s .tier-label-cell{color:var(--s);background:rgba(230,57,70,.08);}
-    .tier-a .tier-label-cell{color:var(--a);background:rgba(244,162,97,.08);}
-    .tier-b .tier-label-cell{color:var(--b);background:rgba(233,196,106,.08);}
-    .tier-c .tier-label-cell{color:var(--c);background:rgba(42,157,143,.08);}
-    .tier-d .tier-label-cell{color:var(--d);background:rgba(69,123,157,.08);}
-    .tier-e .tier-label-cell{color:var(--e);background:rgba(155,93,229,.08);}
-    .tier-f .tier-label-cell{color:var(--f);background:rgba(85,85,85,.08);}
 
-    .tier-chip{
-      display:inline-flex;align-items:center;gap:5px;
-      background:var(--bg3);border:1px solid var(--border2);
-      border-radius:var(--radius-sm);padding:3px 9px;
-      font-size:13px;font-weight:600;cursor:grab;
-      transition:border-color .15s,opacity .15s;color:var(--text);
+    .nav-spacer {
+      flex: 1;
     }
-    .tier-chip:hover{border-color:var(--border2);}
-    .tier-chip.dragging{opacity:.35;}
-    .tier-chip-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0;transition:color .1s;}
-    .tier-chip-del:hover{color:var(--accent);}
 
-    /* ── ACTION BAR ── */
-    .action-bar{display:flex;gap:8px;flex-wrap:wrap;padding:20px 0 0;}
-    .btn{
-      border:none;border-radius:var(--radius);padding:8px 18px;
-      font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;
-      transition:opacity .15s;
+    #nav-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    .btn:hover{opacity:.8;}
-    .btn-save{background:var(--accent);color:#fff;}
-    .btn-preview{background:var(--bg2);color:var(--text);border:1px solid var(--border2);}
-    .btn-share{background:var(--bg2);color:var(--text);border:1px solid var(--border2);}
-    .btn-clear{background:transparent;color:var(--text3);border:1px solid var(--border);}
-    .btn-clear:hover{color:var(--accent);border-color:var(--accent);opacity:1;}
 
-    /* ── BOTTOM NAV (MCTiers style) ── */
-    #bottom-nav{
-      position:fixed;bottom:0;left:0;right:0;z-index:80;
-      height:var(--bottom-h);
-      background:var(--bg1);border-top:1px solid var(--border);
-      display:flex;align-items:stretch;
+    #nav-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      object-fit: cover;
     }
-    .bnav-item{
-      flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-      gap:3px;border:none;background:transparent;cursor:pointer;
-      color:var(--text3);font-size:11px;font-weight:600;
-      transition:color .15s;padding:0;
-    }
-    .bnav-item:hover{color:var(--text2);}
-    .bnav-item.active{color:var(--accent);}
-    .bnav-icon{font-size:1.3rem;line-height:1;}
 
-    /* ── MODALS ── */
-    .overlay{
-      display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);
-      z-index:200;align-items:center;justify-content:center;padding:16px;
+    #nav-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
     }
-    .overlay.open{display:flex;}
-    .modal{
-      background:var(--bg1);border:1px solid var(--border2);
-      border-radius:8px;padding:24px;width:100%;max-width:500px;
-      max-height:90vh;overflow-y:auto;position:relative;
-    }
-    .modal-title{font-size:16px;font-weight:800;margin-bottom:4px;}
-    .modal-sub{font-size:13px;color:var(--text2);margin-bottom:18px;}
-    .modal-close{
-      position:absolute;top:16px;right:16px;background:none;border:none;
-      color:var(--text3);font-size:1.3rem;cursor:pointer;transition:color .15s;
-    }
-    .modal-close:hover{color:var(--text);}
 
-    /* ── AD BLOCK ── */
-    .ad-block{
-      border:1px dashed var(--border2);border-radius:var(--radius);
-      padding:16px;text-align:center;margin:16px 0;position:relative;
+    /* ── BUTTONS ───────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--r-sm);
+      border: none;
+      cursor: pointer;
+      padding: 0 14px;
+      height: 34px;
+      transition: opacity .15s, background .15s, color .15s, border-color .15s;
+      white-space: nowrap;
+      text-decoration: none;
     }
-    .ad-badge{position:absolute;top:6px;right:8px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
-    .ad-slot{background:var(--bg3);border-radius:var(--radius-sm);height:90px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:12px;margin-top:8px;}
 
-    /* ── SHARE INPUT ── */
-    .share-row{display:flex;gap:8px;margin-top:14px;}
-    .share-input{flex:1;background:var(--bg2);border:1px solid var(--border2);color:var(--text2);border-radius:var(--radius);padding:8px 12px;font-size:12px;outline:none;min-width:0;}
-
-    /* ── PREVIEW CONTENT ── */
-    .preview-row{
-      display:flex;align-items:center;gap:12px;
-      padding:10px 12px;border-bottom:1px solid var(--border);
+    .btn:hover {
+      opacity: .85;
     }
-    .preview-row:last-child{border-bottom:none;}
-    .preview-rank{font-size:13px;font-weight:700;min-width:32px;}
-    .preview-name{font-size:14px;font-weight:600;}
-    .preview-tier-row{
-      display:flex;align-items:stretch;border-bottom:1px solid var(--border);min-height:46px;
-    }
-    .preview-tier-row:last-child{border-bottom:none;}
-    .preview-tier-label{
-      width:48px;min-width:48px;display:flex;align-items:center;justify-content:center;
-      font-size:1rem;font-weight:800;border-right:1px solid var(--border);
-    }
-    .preview-tier-items{flex:1;display:flex;flex-wrap:wrap;gap:5px;padding:7px 12px;align-items:center;}
-    .preview-chip{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:2px 9px;font-size:12px;font-weight:600;}
 
-    /* ── CONTEXT MENU ── */
-    #ctx{
-      display:none;position:fixed;z-index:300;
-      background:var(--bg1);border:1px solid var(--border2);border-radius:8px;
-      padding:6px;min-width:160px;box-shadow:0 8px 24px #000a;
+    .btn:active {
+      opacity: .7;
     }
-    #ctx.open{display:block;}
-    .ctx-item{
-      display:flex;align-items:center;gap:9px;
-      padding:7px 12px;border-radius:var(--radius-sm);cursor:pointer;
-      font-size:13px;font-weight:600;transition:background .1s;
+
+    .btn-primary {
+      background: var(--cyan);
+      color: #000;
+      font-weight: 700;
     }
-    .ctx-item:hover{background:var(--bg2);}
-    .ctx-item.danger{color:var(--accent);}
-    .ctx-sep{height:1px;background:var(--border);margin:4px 0;}
-    .ctx-tier-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
 
-    /* ── TOAST ── */
-    #toasts{position:fixed;bottom:76px;right:16px;z-index:999;display:flex;flex-direction:column;gap:6px;}
-    .toast{
-      background:var(--bg1);border:1px solid var(--border2);
-      border-radius:var(--radius);padding:10px 16px;
-      font-size:13px;font-weight:600;
-      box-shadow:0 4px 16px #000a;
-      animation:tin .2s ease;max-width:280px;
-      display:flex;align-items:center;gap:8px;
+    .btn-primary:hover {
+      opacity: 1;
+      background: #22d3ee;
     }
-    .toast-s{border-left:3px solid #2a9d8f;}
-    .toast-e{border-left:3px solid var(--accent);}
-    .toast-i{border-left:3px solid #457b9d;}
-    @keyframes tin{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
-    @keyframes tout{to{transform:translateX(40px);opacity:0}}
 
-    /* ── LOADING ── */
-    #loading{
-      position:fixed;inset:0;background:var(--bg);z-index:999;
-      display:flex;align-items:center;justify-content:center;gap:12px;
-      font-size:13px;font-weight:600;color:var(--text3);
+    .btn-ghost {
+      background: transparent;
+      color: var(--text2);
+      border: 1px solid var(--border);
     }
-    .spin{width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:sp .6s linear infinite;}
-    @keyframes sp{to{transform:rotate(360deg)}}
 
-    /* ── HINT ── */
-    .hint{font-size:11px;color:var(--text3);margin-top:6px;}
+    .btn-ghost:hover {
+      background: var(--surface2);
+      color: var(--text);
+      opacity: 1;
+    }
 
-    /* ── DIVIDER ── */
-    .divider{height:1px;background:var(--border);margin:20px 0;}
+    .btn-danger {
+      background: transparent;
+      color: #f87171;
+      border: 1px solid #3f1f1f;
+    }
 
-    /* ── RESPONSIVE ── */
-    @media(max-width:500px){
-      #top-nav{padding:0 14px;}
-      #app{padding:16px 12px 36px;}
-      .podium-1 .podium-block{width:88px;height:96px;}
-      .podium-2 .podium-block{width:72px;height:70px;}
-      .podium-3 .podium-block{width:64px;height:54px;}
+    .btn-danger:hover {
+      background: rgba(248, 113, 113, .08);
+      opacity: 1;
+    }
+
+    .btn-discord {
+      background: #5865f2;
+      color: #fff;
+    }
+
+    .btn-discord:hover {
+      opacity: 1;
+      background: #6d7af5;
+    }
+
+    .btn-icon {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      background: transparent;
+      color: var(--dim);
+      border: none;
+      border-radius: var(--r-xs);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background .12s, color .12s;
+    }
+
+    .btn-icon:hover {
+      background: var(--surface2);
+      color: var(--text2);
+    }
+
+    .btn-icon.del:hover {
+      color: #f87171;
+    }
+
+    .btn-logout {
+      font-size: 12px;
+      font-weight: 600;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--dim);
+      border-radius: var(--r-xs);
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+
+    .btn-logout:hover {
+      border-color: #f87171;
+      color: #f87171;
+    }
+
+    svg.icon {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+
+    /* ── LAYOUT ────────────────────────────── */
+    #app {
+      max-width: 1250px;
+      margin: 0 auto;
+      padding: 32px 20px 100px;
+    }
+
+    .section {
+      display: none;
+    }
+
+    .section.visible {
+      display: block;
+    }
+
+    /* ── GUEST PAGE ────────────────────────── */
+    #guest {
+      min-height: calc(100vh - 56px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 20px;
+      gap: 0;
+    }
+
+    .guest-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--cyan-dim);
+      border: 1px solid rgba(6, 182, 212, .3);
+      color: var(--cyan);
+      border-radius: 99px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .3px;
+      margin-bottom: 24px;
+    }
+
+    .guest-eyebrow::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      display: inline-block;
+    }
+
+    #guest h1 {
+      font-size: clamp(2.2rem, 6vw, 3.6rem);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.05;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    #guest h1 em {
+      color: var(--cyan);
+      font-style: normal;
+    }
+
+    #guest p {
+      color: var(--text2);
+      font-size: 15px;
+      max-width: 380px;
+      line-height: 1.7;
+      margin-bottom: 36px;
+    }
+
+    .guest-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 56px;
+    }
+
+    .guest-features {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      max-width: 460px;
+      width: 100%;
+    }
+
+    .feat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 16px 18px;
+      text-align: left;
+    }
+
+    .feat-card-icon {
+      font-size: 1.3rem;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .feat-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+
+    .feat-card-desc {
+      font-size: 12px;
+      color: var(--dim);
+      line-height: 1.5;
+    }
+
+    /* ── EDITOR HEADER ─────────────────────── */
+    .editor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .editor-header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .editor-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--dim);
+    }
+
+    .title-field {
+      font-family: inherit;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -.4px;
+      color: var(--text);
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 0;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .title-field::placeholder {
+      color: var(--muted);
+    }
+
+    .title-field:focus {
+      color: var(--text);
+    }
+
+    /* ── SEGMENT CONTROL (type switch) ──────── */
+    .segment {
+      display: inline-flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .seg-btn {
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 5px 16px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--dim);
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+
+    .seg-btn.active {
+      background: var(--surface2);
+      color: var(--text);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .4);
+    }
+
+    .seg-btn:not(.active):hover {
+      color: var(--text2);
+    }
+
+    /* ── CARD ──────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text2);
+    }
+
+    .card-meta {
+      font-size: 12px;
+      color: var(--dim);
+    }
+
+    .card-meta.warn {
+      color: #f87171;
+    }
+
+    .card-body {
+      padding: 16px 18px;
+    }
+
+    /* ── DISPLAY SWITCHER ──────────────────── */
+    .disp-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .disp-pill {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--dim);
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+
+    .disp-pill.active {
+      background: var(--cyan-dim);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    /* ── INPUT ROW ─────────────────────────── */
+    .input-group {
+      display: flex;
+      gap: 8px;
+      padding: 14px 18px;
+      border-top: 1px solid var(--border);
+    }
+
+    .field {
+      flex: 1;
+      min-width: 0;
+      font-family: inherit;
+      font-size: 13px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--r-sm);
+      padding: 0 12px;
+      height: 34px;
+      outline: none;
+      transition: border-color .15s;
+    }
+
+    .field::placeholder {
+      color: var(--dim);
+    }
+
+    .field:focus {
+      border-color: var(--cyan);
+    }
+
+    /* ── RANKED TABLE ──────────────────────── */
+    .rank-table {
+      width: 100%;
+    }
+
+    .rank-row {
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      align-items: center;
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border);
+      cursor: grab;
+      user-select: none;
+      transition: background .1s;
+      gap: 8px;
+    }
+
+    .rank-row:last-child {
+      border-bottom: none;
+    }
+
+    .rank-row:hover {
+      background: var(--surface2);
+    }
+
+    .rank-row.dragging {
+      opacity: .35;
+    }
+
+    .rank-row.drag-over {
+      background: var(--cyan-dim);
+      border-bottom-color: var(--cyan);
+    }
+
+    .rank-num {
+      font-size: 13px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .rank-num.gold {
+      color: var(--gold);
+    }
+
+    .rank-num.silver {
+      color: var(--silver);
+    }
+
+    .rank-num.bronze {
+      color: var(--bronze);
+    }
+
+    .rank-num.plain {
+      color: var(--dim);
+    }
+
+    .rank-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .rank-controls {
+      display: flex;
+      gap: 2px;
+      opacity: 0;
+      transition: opacity .15s;
+    }
+
+    .rank-row:hover .rank-controls {
+      opacity: 1;
+    }
+
+    .rank-empty {
+      padding: 32px 18px;
+      text-align: center;
+      color: var(--dim);
+      font-size: 13px;
+    }
+
+    /* ── THRONE / PODIUM ───────────────────── */
+    #podium-wrap {
+      display: none;
+    }
+
+    .podium-stage {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 32px 20px 0;
+      gap: 8px;
+    }
+
+    .pod-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .pod-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      max-width: 88px;
+      word-break: break-word;
+      line-height: 1.3;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .pod-medal {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+
+    .pod-block {
+      border-radius: 6px 6px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .5px;
+    }
+
+    .pod-1 .pod-block {
+      width: 108px;
+      height: 116px;
+      background: linear-gradient(180deg, rgba(234, 179, 8, .15) 0%, rgba(234, 179, 8, .05) 100%);
+      border: 1px solid rgba(234, 179, 8, .4);
+      border-bottom: none;
+      color: var(--gold);
+    }
+
+    .pod-2 .pod-block {
+      width: 88px;
+      height: 84px;
+      background: linear-gradient(180deg, rgba(148, 163, 184, .12) 0%, rgba(148, 163, 184, .04) 100%);
+      border: 1px solid rgba(148, 163, 184, .3);
+      border-bottom: none;
+      color: var(--silver);
+    }
+
+    .pod-3 .pod-block {
+      width: 76px;
+      height: 60px;
+      background: linear-gradient(180deg, rgba(180, 83, 9, .15) 0%, rgba(180, 83, 9, .05) 100%);
+      border: 1px solid rgba(180, 83, 9, .35);
+      border-bottom: none;
+      color: var(--bronze);
+    }
+
+    .pod-base {
+      height: 1px;
+      background: var(--border);
+      width: calc(108px + 88px + 76px + 32px);
+      max-width: 100%;
+    }
+
+    .podium-rest {}
+
+    /* ── TIER GRID ─────────────────────────── */
+    #pool-area {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pool-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--dim);
+      margin-bottom: 10px;
+    }
+
+    #pool {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 40px;
+      padding: 10px;
+      background: var(--bg);
+      border: 1px dashed var(--border);
+      border-radius: var(--r-sm);
+      transition: border-color .15s, background .15s;
+    }
+
+    #pool.over {
+      border-color: var(--cyan);
+      background: var(--cyan-dim);
+    }
+
+    .pool-empty {
+      font-size: 12px;
+      color: var(--dim);
+      padding: 2px 0;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xs);
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: grab;
+      user-select: none;
+      transition: border-color .12s, opacity .12s;
+    }
+
+    .chip:hover {
+      border-color: var(--muted);
+    }
+
+    .chip.dragging {
+      opacity: .3;
+    }
+
+    .chip-x {
+      background: none;
+      border: none;
+      color: var(--dim);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 0;
+      line-height: 1;
+      transition: color .1s;
+    }
+
+    .chip-x:hover {
+      color: #f87171;
+    }
+
+    .tier-rows {}
+
+    .tier-row {
+      display: flex;
+      align-items: stretch;
+      border-bottom: 1px solid var(--border);
+      min-height: 50px;
+      transition: background .1s;
+    }
+
+    .tier-row:last-child {
+      border-bottom: none;
+    }
+
+    .tier-row.over {
+      background: rgba(6, 182, 212, .05);
+    }
+
+    .tier-tag {
+      width: 54px;
+      min-width: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -.3px;
+      border-right: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tier-tag.S {
+      color: #f87171;
+    }
+
+    .tier-tag.A {
+      color: #fb923c;
+    }
+
+    .tier-tag.B {
+      color: #facc15;
+    }
+
+    .tier-tag.C {
+      color: #4ade80;
+    }
+
+    .tier-tag.D {
+      color: #60a5fa;
+    }
+
+    .tier-tag.E {
+      color: #a78bfa;
+    }
+
+    .tier-tag.F {
+      color: var(--dim);
+    }
+
+    .tier-chips {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 8px 14px;
+      align-items: center;
+    }
+
+    .tier-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xs);
+      padding: 3px 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      cursor: grab;
+      user-select: none;
+      transition: border-color .12s, opacity .12s;
+    }
+
+    .tier-chip:hover {
+      border-color: var(--muted);
+    }
+
+    .tier-chip.dragging {
+      opacity: .3;
+    }
+
+    .tier-chip-x {
+      background: none;
+      border: none;
+      color: var(--dim);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 0;
+      line-height: 1;
+      transition: color .1s;
+    }
+
+    .tier-chip-x:hover {
+      color: #f87171;
+    }
+
+    /* ── ACTION BAR ────────────────────────── */
+    .action-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 20px 0 0;
+    }
+
+    /* ── CONTEXT MENU ──────────────────────── */
+    #ctx {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 5px;
+      min-width: 170px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, .6), 0 4px 12px rgba(0, 0, 0, .4);
+    }
+
+    #ctx.open {
+      display: block;
+    }
+
+    .ctx-header {
+      padding: 5px 10px 3px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+    }
+
+    .ctx-sep {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    .ctx-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: var(--r-xs);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      transition: background .1s, color .1s;
+    }
+
+    .ctx-item:hover {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .ctx-item.danger {
+      color: #f87171;
+    }
+
+    .ctx-item.danger:hover {
+      background: rgba(248, 113, 113, .08);
+    }
+
+    .ctx-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── TOAST ─────────────────────────────── */
+    #toasts {
+      position: fixed;
+      bottom: 24px;
+      right: 20px;
+      z-index: 900;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, .5);
+      animation: toast-in .2s cubic-bezier(.16, 1, .3, 1);
+      max-width: 300px;
+    }
+
+    .toast::before {
+      content: '';
+      width: 3px;
+      min-width: 3px;
+      height: 20px;
+      border-radius: 99px;
+    }
+
+    .toast.s::before {
+      background: var(--cyan);
+    }
+
+    .toast.e::before {
+      background: #f87171;
+    }
+
+    .toast.i::before {
+      background: var(--silver);
+    }
+
+    @keyframes toast-in {
+      from {
+        transform: translateY(8px) scale(.96);
+        opacity: 0;
+      }
+
+      to {
+        transform: none;
+        opacity: 1;
+      }
+    }
+
+    @keyframes toast-out {
+      to {
+        transform: translateX(16px);
+        opacity: 0;
+      }
+    }
+
+    /* ── OVERLAY + MODAL ───────────────────── */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0, 0, 0, .7);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 24px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, .6);
+      animation: modal-in .2s cubic-bezier(.16, 1, .3, 1);
+    }
+
+    @keyframes modal-in {
+      from {
+        transform: translateY(12px) scale(.98);
+        opacity: 0;
+      }
+
+      to {
+        transform: none;
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .modal-sub {
+      font-size: 13px;
+      color: var(--dim);
+      margin-top: 3px;
+    }
+
+    .modal-x {
+      background: none;
+      border: none;
+      color: var(--dim);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0;
+      line-height: 1;
+      transition: color .15s;
+      flex-shrink: 0;
+    }
+
+    .modal-x:hover {
+      color: var(--text);
+    }
+
+    /* ── AD BLOCK ──────────────────────────── */
+    .ad-wrap {
+      border: 1px dashed var(--border);
+      border-radius: var(--r-sm);
+      padding: 14px;
+      margin: 16px 0;
+      text-align: center;
+      position: relative;
+    }
+
+    .ad-label {
+      position: absolute;
+      top: 6px;
+      right: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--dim);
+    }
+
+    .ad-slot {
+      background: var(--bg);
+      border-radius: var(--r-xs);
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--dim);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .ad-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text2);
+    }
+
+    /* ── SHARE INPUT ───────────────────────── */
+    .share-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .share-field {
+      flex: 1;
+      min-width: 0;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      border-radius: var(--r-sm);
+      padding: 0 12px;
+      height: 34px;
+      outline: none;
+    }
+
+    /* ── PREVIEW ───────────────────────────── */
+    .prev-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .prev-row:last-child {
+      border-bottom: none;
+    }
+
+    .prev-num {
+      font-size: 13px;
+      font-weight: 700;
+      min-width: 36px;
+    }
+
+    .prev-name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .prev-tier-row {
+      display: flex;
+      align-items: stretch;
+      border-bottom: 1px solid var(--border);
+      min-height: 44px;
+    }
+
+    .prev-tier-row:last-child {
+      border-bottom: none;
+    }
+
+    .prev-tier-tag {
+      width: 50px;
+      min-width: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      border-right: 1px solid var(--border);
+    }
+
+    .prev-tier-chips {
+      flex: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      padding: 7px 12px;
+      align-items: center;
+    }
+
+    .prev-chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xs);
+      padding: 2px 9px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* ── LOADING ───────────────────────────── */
+    #loading {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--dim);
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--cyan);
+      border-radius: 50%;
+      animation: spin .65s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── MISC ──────────────────────────────── */
+    .hint {
+      font-size: 11px;
+      color: var(--dim);
+      padding: 0 18px 14px;
+    }
+
+    @media (max-width: 520px) {
+      #nav {
+        padding: 0 16px;
+      }
+
+      #app {
+        padding: 20px 14px 100px;
+      }
+
+      .guest-features {
+        grid-template-columns: 1fr;
+      }
+
+      .pod-1 .pod-block {
+        width: 88px;
+        height: 96px;
+      }
+
+      .pod-2 .pod-block {
+        width: 72px;
+        height: 70px;
+      }
+
+      .pod-3 .pod-block {
+        width: 62px;
+        height: 50px;
+      }
+    }
+  </style>
+  <style>
+    :root {
+      --surface: rgba(25, 25, 28, .96);
+      --surface2: rgba(30, 30, 36, .96);
+      --border: rgba(255, 255, 255, .08);
+      --surface-strong: rgba(255, 255, 255, .05);
+    }
+
+    body {
+      background: radial-gradient(circle at 20% 12%, rgba(6, 182, 212, .14), transparent 18%),
+        radial-gradient(circle at 88% 12%, rgba(234, 179, 8, .1), transparent 12%),
+        linear-gradient(180deg, #09090b 0%, #050507 100%);
+    }
+
+    #app {
+      max-width: 980px;
+      padding: 34px 22px 96px;
+    }
+
+    #app::before {
+      background: radial-gradient(circle at 10% 0%, rgba(6, 182, 212, .16), transparent 16%),
+        radial-gradient(circle at 92% 12%, rgba(234, 179, 8, .12), transparent 12%),
+        radial-gradient(circle at 50% 100%, rgba(255, 255, 255, .04), transparent 20%);
+    }
+
+    .card,
+    .modal,
+    .ctx {
+      border-color: rgba(255, 255, 255, .08);
+    }
+
+    .card {
+      background: rgba(18, 18, 22, .96);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, .32);
+    }
+
+    .card-header,
+    .input-group,
+    #pool-area {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    .editor-header {
+      gap: 20px;
+    }
+
+    .title-field {
+      font-size: 28px;
+    }
+
+    .segment {
+      background: rgba(255, 255, 255, .03);
+      border-color: rgba(255, 255, 255, .1);
+    }
+
+    .seg-btn.active,
+    .disp-pill.active {
+      background: rgba(6, 182, 212, .16);
+      border-color: rgba(6, 182, 212, .3);
+      color: var(--text);
+    }
+
+    .btn {
+      border-radius: 14px;
+    }
+
+    .btn-primary {
+      box-shadow: 0 16px 36px rgba(6, 182, 212, .18);
+    }
+
+    .btn-ghost,
+    .btn-logout,
+    .share-field,
+    .field,
+    #pool,
+    .chip,
+    .tier-chip,
+    .rank-row,
+    .tier-row,
+    .card,
+    .modal,
+    .toast,
+    .feat-card {
+      backdrop-filter: blur(12px);
+    }
+
+    .field,
+    .share-field {
+      background: rgba(255, 255, 255, .05);
+      border-color: rgba(255, 255, 255, .1);
+    }
+
+    .rank-row {
+      background: rgba(255, 255, 255, .04);
+    }
+
+    .rank-row:hover {
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .tier-row {
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .tier-tag {
+      background: rgba(255, 255, 255, .04);
+      border-right-color: rgba(255, 255, 255, .08);
+    }
+
+    .tier-chips {
+      padding: 18px 20px;
+    }
+
+    .podium-stage {
+      gap: 18px;
+      padding-bottom: 20px;
+    }
+
+    .pod-block {
+      min-height: 82px;
+      border-radius: 22px 22px 8px 8px;
+      box-shadow: inset 0 -4px 0 rgba(255, 255, 255, .04);
+    }
+
+    .chip,
+    .tier-chip {
+      padding: 10px 14px;
+      border-radius: 999px;
+    }
+
+    .chip:hover,
+    .tier-chip:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, .2);
+    }
+
+    .guest-features {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .feat-card {
+      border-radius: 24px;
+      background: rgba(255, 255, 255, .03);
+      border-color: rgba(255, 255, 255, .1);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, .2);
+    }
+
+    .modal {
+      background: rgba(18, 18, 22, .98);
+      box-shadow: 0 26px 80px rgba(0, 0, 0, .44);
+    }
+
+    .share-row {
+      gap: 12px;
+    }
+
+    .toast {
+      border-radius: 18px;
+      border-color: rgba(255, 255, 255, .08);
+    }
+
+    @media (max-width: 720px) {
+      .card-header,
+      .input-group,
+      #pool-area { padding-left: 18px; padding-right: 18px; }
+      .rank-row,
+      .tier-row { grid-template-columns: 44px 1fr auto; padding: 12px 16px; }
+      .share-row { flex-direction: column; }
+      .share-field { width: 100%; }
     }
   </style>
 </head>
+
 <body>
 
-<!-- Loading -->
-<div id="loading"><div class="spin"></div>Loading…</div>
-
-<!-- Toast -->
-<div id="toasts"></div>
-
-<!-- Context menu -->
-<div id="ctx">
-  <div id="ctx-name" style="padding:5px 12px 3px;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;"></div>
-  <div class="ctx-sep"></div>
-  <div id="ctx-tier-list"></div>
-  <div class="ctx-sep"></div>
-  <div class="ctx-item" id="ctx-pool">↩ Back to pool</div>
-  <div class="ctx-item danger" id="ctx-del">✕ Delete</div>
-</div>
-
-<!-- TOP NAV -->
-<nav id="top-nav">
-  <div class="wordmark">SkillTiers<span class="dot">.</span></div>
-  <div id="nav-right">
-    <button class="btn-discord" onclick="loginDiscord()">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.033.055a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
-      Login with Discord
-    </button>
+  <!-- Loading -->
+  <div id="loading">
+    <div class="spinner"></div>
+    Loading…
   </div>
-</nav>
 
-<!-- TYPE TABS (hidden until logged in) -->
-<div id="type-tabs" style="display:none">
-  <button class="type-tab active" data-type="ranked" onclick="setType('ranked')">
-    <span class="tab-icon">🏅</span> Ranked
-  </button>
-  <button class="type-tab" data-type="tiered" onclick="setType('tiered')">
-    <span class="tab-icon">📊</span> Tiered (S–F)
-  </button>
-</div>
+  <!-- Toasts -->
+  <div id="toasts"></div>
 
-<!-- APP -->
-<div id="app">
+  <!-- Context menu -->
+  <div id="ctx">
+    <div class="ctx-header" id="ctx-label"></div>
+    <div class="ctx-sep"></div>
+    <div id="ctx-tiers"></div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" id="ctx-pool-btn">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 15l-3-3m0 0l3-3m-3 3h12" />
+      </svg>
+      Back to pool
+    </div>
+    <div class="ctx-item danger" id="ctx-del-btn">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path
+          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+      </svg>
+      Delete
+    </div>
+  </div>
 
-  <!-- GUEST -->
-  <div id="section-guest" class="section visible">
-    <div id="guest-splash">
-      <div class="splash-badge">Free · Open · Yours</div>
-      <h1>Your Skills.<br><span>Your Tiers.</span></h1>
-      <p>Build and share a ranked or tiered list of players, skills, or anything you want — saved to your account.</p>
-      <div class="feature-grid">
-        <div class="feature-chip">🏅 Ranked Top 25</div>
-        <div class="feature-chip">📊 S–F Tiers</div>
-        <div class="feature-chip">👑 Throne View</div>
-        <div class="feature-chip">🔗 Share Link</div>
-        <div class="feature-chip">Discord Login</div>
-      </div>
-      <button class="btn-discord" style="padding:12px 28px;font-size:14px;border-radius:6px" onclick="loginDiscord()">
-        <svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.033.055a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
-        Get Started with Discord
+  <!-- ── NAV ── -->
+  <nav id="nav">
+    <a class="nav-logo" href="#">SkillTiers<span class="nav-logo-dot">.</span></a>
+    <div class="nav-spacer"></div>
+    <div id="nav-right">
+      <button class="btn btn-discord" onclick="loginDiscord()">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.033.055a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 13.298 13.298 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z" />
+        </svg>
+        Login with Discord
       </button>
     </div>
-  </div>
+  </nav>
 
-  <!-- EDITOR -->
-  <div id="section-editor" class="section">
+  <!-- ── APP ── -->
+  <div id="app">
 
-    <!-- Title setting -->
-    <div class="settings-block">
-      <div class="block-label">List Title</div>
-      <input class="title-input" id="list-title" type="text" placeholder="e.g. Top 25 PvP Players" maxlength="60"/>
-    </div>
-
-    <!-- ═══ RANKED EDITOR ═══ -->
-    <div id="ranked-editor">
-      <div class="settings-block">
-        <div class="sec-head">
-          <div class="sec-title">Rankings</div>
-          <div class="sec-meta" id="ranked-count">0 / 25</div>
+    <!-- GUEST -->
+    <div id="section-guest" class="section visible">
+      <div id="guest">
+        <div class="guest-eyebrow">Free to use · No account needed to view</div>
+        <h1>Your skills.<br><em>Your tiers.</em></h1>
+        <p>Build a ranked or tiered list of anything — players, skills, games — and share it with a single link.</p>
+        <div class="guest-actions">
+          <button class="btn btn-discord" style="height:40px;font-size:14px;gap:9px" onclick="loginDiscord()">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.033.055a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 13.298 13.298 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z" />
+            </svg>
+            Get started with Discord
+          </button>
         </div>
-
-        <!-- Display toggle -->
-        <div class="display-toggle">
-          <button class="disp-btn active" id="disp-normal" onclick="setDisplay('normal')">Normal</button>
-          <button class="disp-btn" id="disp-throne" onclick="setDisplay('throne')">👑 Throne</button>
-        </div>
-
-        <!-- Normal table view -->
-        <div id="normal-view">
-          <div class="r-header">
-            <div>#</div><div>Name</div><div></div>
+        <div class="guest-features">
+          <div class="feat-card">
+            <span class="feat-card-icon">🏅</span>
+            <div class="feat-card-title">Ranked Top 25</div>
+            <div class="feat-card-desc">Drag-to-reorder numbered list. Gold, silver & bronze podium view.</div>
           </div>
-          <div id="ranked-table"></div>
+          <div class="feat-card">
+            <span class="feat-card-icon">📊</span>
+            <div class="feat-card-title">Tiered S–F</div>
+            <div class="feat-card-desc">Classic tier rows. Drag & drop or right-click to assign.</div>
+          </div>
+          <div class="feat-card">
+            <span class="feat-card-icon">🔗</span>
+            <div class="feat-card-title">Shareable Link</div>
+            <div class="feat-card-desc">Public read-only view. No login required for viewers.</div>
+          </div>
+          <div class="feat-card">
+            <span class="feat-card-icon">💾</span>
+            <div class="feat-card-title">Auto-saved</div>
+            <div class="feat-card-desc">One list per account, editable any time you want.</div>
+          </div>
         </div>
-
-        <!-- Throne view -->
-        <div id="throne-wrap">
-          <div class="podium-stage" id="podium-stage"></div>
-          <div class="podium-floor"></div>
-          <div id="throne-rest-list"></div>
-        </div>
-
-        <div class="add-row" style="margin-top:14px">
-          <input class="add-input" id="ranked-input" placeholder="Add player or item name…" maxlength="50"/>
-          <button class="btn-add" onclick="addRankedItem()">+ Add</button>
-        </div>
-        <div class="hint">Drag rows to reorder · Hover for controls</div>
       </div>
     </div>
 
-    <!-- ═══ TIERED EDITOR ═══ -->
-    <div id="tiered-editor" style="display:none">
-      <div class="settings-block">
-        <div class="sec-head">
-          <div class="sec-title">Pool</div>
-          <div class="sec-meta">Unranked items</div>
+    <!-- EDITOR -->
+    <div id="section-editor" class="section">
+
+      <!-- Header row -->
+      <div class="editor-header">
+        <div class="editor-header-left">
+          <div class="editor-label">Your Tierlist</div>
+          <input class="title-field" id="list-title" type="text" placeholder="Untitled list…" maxlength="60" />
         </div>
-        <div id="unranked-pool"><span class="empty-pool">Add items below and drag them into tiers</span></div>
-        <div class="add-row" style="margin-top:10px">
-          <input class="add-input" id="tier-input" placeholder="Add item to pool…" maxlength="50"/>
-          <button class="btn-add" onclick="addTierItem()">+ Add</button>
+        <div class="segment" id="type-seg">
+          <button class="seg-btn active" data-type="ranked" onclick="setType('ranked')">🏅 Ranked</button>
+          <button class="seg-btn" data-type="tiered" onclick="setType('tiered')">📊 Tiered</button>
         </div>
-        <div class="hint">Drag items into tiers, or right-click for quick assign</div>
       </div>
 
-      <div class="settings-block" style="padding:0;overflow:hidden">
-        <div id="tier-rows"></div>
+      <!-- ── RANKED ── -->
+      <div id="ranked-editor">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Rankings</span>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="disp-row" style="margin:0">
+                <button class="disp-pill active" id="dp-normal" onclick="setDisplay('normal')">List</button>
+                <button class="disp-pill" id="dp-throne" onclick="setDisplay('throne')">👑 Throne</button>
+              </div>
+              <span class="card-meta" id="rank-count">0 / 25</span>
+            </div>
+          </div>
+
+          <!-- Normal list -->
+          <div id="normal-view">
+            <div class="rank-table" id="rank-table"></div>
+          </div>
+
+          <!-- Throne view -->
+          <div id="podium-wrap">
+            <div class="podium-stage" id="podium-stage"></div>
+            <div class="pod-base" style="margin:0 auto"></div>
+            <div id="podium-rest"></div>
+          </div>
+
+          <div class="input-group">
+            <input class="field" id="ranked-input" placeholder="Add a player or item…" maxlength="50" />
+            <button class="btn btn-primary" onclick="addRankedItem()">Add</button>
+          </div>
+          <div class="hint">Drag rows to reorder • Hover a row to edit</div>
+        </div>
+      </div>
+
+      <!-- ── TIERED ── -->
+      <div id="tiered-editor" style="display:none">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Item Pool</span>
+            <span class="card-meta">Drag into a tier below</span>
+          </div>
+          <div id="pool-area">
+            <div id="pool"><span class="pool-empty">Add items below, then drag them into tiers</span></div>
+          </div>
+          <div class="input-group">
+            <input class="field" id="tier-input" placeholder="Add an item to the pool…" maxlength="50" />
+            <button class="btn btn-primary" onclick="addTierItem()">Add</button>
+          </div>
+          <div class="hint">Drag between tiers or right-click any item to reassign</div>
+        </div>
+
+        <div class="card" style="overflow:hidden">
+          <div class="tier-rows" id="tier-rows"></div>
+        </div>
+      </div>
+
+      <!-- Action bar -->
+      <div class="action-bar">
+        <button class="btn btn-primary" onclick="requestSave()">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
+          </svg>
+          Save
+        </button>
+        <button class="btn btn-ghost" onclick="openPreview()">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          Preview
+        </button>
+        <button class="btn btn-ghost" onclick="openShare()">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          </svg>
+          Share
+        </button>
+        <div style="flex:1"></div>
+        <button class="btn btn-danger" onclick="clearList()">Clear</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PREVIEW MODAL -->
+  <div class="overlay" id="modal-preview">
+    <div class="modal" style="max-width:560px">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="prev-title">Preview</div>
+          <div class="modal-sub" id="prev-sub"></div>
+        </div>
+        <button class="modal-x" onclick="closeModal('modal-preview')">✕</button>
+      </div>
+      <div id="prev-body"></div>
+    </div>
+  </div>
+
+  <!-- SHARE MODAL -->
+  <div class="overlay" id="modal-share">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">Share your list</div>
+          <div class="modal-sub">Anyone with this link can view — no login needed</div>
+        </div>
+        <button class="modal-x" onclick="closeModal('modal-share')">✕</button>
+      </div>
+      <div class="share-row">
+        <input class="share-field" id="share-url" readonly />
+        <button class="btn btn-primary" onclick="copyShare()">Copy</button>
       </div>
     </div>
+  </div>
 
-    <!-- Action bar -->
-    <div class="action-bar">
-      <button class="btn btn-save" onclick="requestSave()">Save List</button>
-      <button class="btn btn-preview" onclick="openPreview()">Preview</button>
-      <button class="btn btn-share" onclick="openShare()">Share Link</button>
-      <button class="btn btn-clear" onclick="clearList()">Clear</button>
+  <!-- AD / SAVE MODAL -->
+  <div class="overlay" id="modal-ad">
+    <div class="modal" style="text-align:center">
+      <div class="modal-title">Saving your list</div>
+      <div class="modal-sub" style="margin-top:4px">A quick ad keeps SkillTiers free for everyone</div>
+      <div class="ad-wrap">
+        <div class="ad-label">Ad</div>
+        <div class="ad-title">Support SkillTiers</div>
+        <div class="ad-slot">[ Ads will be added soon, enjoy your ad-free experience! ]</div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;height:40px;font-size:14px;justify-content:center"
+        onclick="confirmSave()">Continue & save</button>
     </div>
   </div>
 
-</div><!-- /app -->
+  <script>
+    /* ════════════════════════════════════════
+       CONFIG
+    ════════════════════════════════════════ */
+    const SUPABASE_URL = 'https://veemzmzwkgltxbazpvhd.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZW16bXp3a2dsdHhiYXpwdmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMzIyNzgsImV4cCI6MjA5NzgwODI3OH0.wcJL5qYIYJeB_IqUqawxS0tWfPRPXY4lSyPI1HZOxoE';
 
-<!-- BOTTOM NAV -->
-<div id="bottom-nav">
-  <button class="bnav-item active" onclick="bnav('home')">
-    <span class="bnav-icon">🏠</span>Home
-  </button>
-  <button class="bnav-item" onclick="bnav('preview')">
-    <span class="bnav-icon">📋</span>Preview
-  </button>
-  <button class="bnav-item" onclick="bnav('share')">
-    <span class="bnav-icon">🔗</span>Share
-  </button>
-  <button class="bnav-item" onclick="bnav('save')">
-    <span class="bnav-icon">💾</span>Save
-  </button>
-</div>
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-<!-- PREVIEW MODAL -->
-<div class="overlay" id="modal-preview">
-  <div class="modal" style="max-width:600px">
-    <button class="modal-close" onclick="closeModal('modal-preview')">✕</button>
-    <div class="modal-title" id="preview-title-label">Preview</div>
-    <div class="modal-sub" id="preview-type-label"></div>
-    <div id="preview-body"></div>
-  </div>
-</div>
+    /* ── STATE ── */
+    let currentUser = null;
+    let listType = 'ranked';
+    let displayMode = 'normal';
+    let rankedItems = [];
+    let tieredData = { S: [], A: [], B: [], C: [], D: [], E: [], F: [] };
+    let unrankedItems = [];
+    let ctxName = null, ctxFrom = null;
 
-<!-- SHARE MODAL -->
-<div class="overlay" id="modal-share">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('modal-share')">✕</button>
-    <div class="modal-title">Share Your List</div>
-    <div class="modal-sub">Anyone with this link can view your tierlist — no login needed.</div>
-    <div class="share-row">
-      <input class="share-input" id="share-url" readonly/>
-      <button class="btn btn-save" onclick="copyShare()">Copy</button>
-    </div>
-  </div>
-</div>
+    const TIERS = ['S', 'A', 'B', 'C', 'D', 'E', 'F'];
+    const TIER_COLORS = { S: '#f87171', A: '#fb923c', B: '#facc15', C: '#4ade80', D: '#60a5fa', E: '#a78bfa', F: '#71717a' };
 
-<!-- AD / SAVE MODAL -->
-<div class="overlay" id="modal-ad">
-  <div class="modal" style="text-align:center">
-    <div class="modal-title" style="margin-bottom:4px">Saving your list…</div>
-    <div class="modal-sub">A quick ad keeps SkillTiers free 🙏</div>
-    <div class="ad-block">
-      <div class="ad-badge">Advertisement</div>
-      <div style="font-size:12px;color:var(--text2)">Support SkillTiers</div>
-      <div class="ad-slot">[ Replace with Google AdSense or Carbon tag ]</div>
-    </div>
-    <button class="btn btn-save" style="width:100%" onclick="confirmSave()">Continue & Save →</button>
-  </div>
-</div>
+    /* ── TOAST ── */
+    function toast(msg, type = 's', dur = 2600) {
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.textContent = msg;
+      document.getElementById('toasts').appendChild(el);
+      setTimeout(() => {
+        el.style.animation = 'toast-out .2s forwards';
+        setTimeout(() => el.remove(), 200);
+      }, dur);
+    }
 
-<script>
-/* ═══════════════════════════════════════
-   CONFIG — fill in your Supabase values
-═══════════════════════════════════════ */
-const SUPABASE_URL     = 'https://veemzmzwkgltxbazpvhd.supabase.co';
-const SUPABASE_ANON_KEY= 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZW16bXp3a2dsdHhiYXpwdmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMzIyNzgsImV4cCI6MjA5NzgwODI3OH0.wcJL5qYIYJeB_IqUqawxS0tWfPRPXY4lSyPI1HZOxoE';
+    /* ── AUTH ── */
+    async function loginDiscord() {
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: 'discord', options: { redirectTo: location.href }
+      });
+      if (error) toast('Login error: ' + error.message, 'e');
+    }
+    async function logout() {
+      await sb.auth.signOut(); currentUser = null; updateUI(null);
+    }
 
+    function updateUI(user) {
+      currentUser = user;
+      const navR = document.getElementById('nav-right');
+      const guest = document.getElementById('section-guest');
+      const editor = document.getElementById('section-editor');
 
-const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/* ── STATE ─────────────────────────────── */
-let currentUser   = null;
-let listType      = 'ranked';
-let displayMode   = 'normal';
-let rankedItems   = [];
-let tieredData    = {S:[],A:[],B:[],C:[],D:[],E:[],F:[]};
-let unrankedItems = [];
-
-const TIERS = ['S','A','B','C','D','E','F'];
-const TIER_COLORS = {S:'#e63946',A:'#f4a261',B:'#e9c46a',C:'#2a9d8f',D:'#457b9d',E:'#9b5de5',F:'#555'};
-const TIER_DARK   = {S:false,A:false,B:false,C:false,D:false,E:false,F:false};
-
-/* context menu */
-let ctxName = null, ctxFrom = null;
-
-/* ── TOAST ─────────────────────────────── */
-function toast(msg, type='s', dur=2500) {
-  const el = document.createElement('div');
-  el.className = `toast toast-${type}`;
-  el.textContent = msg;
-  document.getElementById('toasts').appendChild(el);
-  setTimeout(()=>{el.style.animation='tout .25s forwards';setTimeout(()=>el.remove(),250);},dur);
-}
-
-/* ── AUTH ──────────────────────────────── */
-async function loginDiscord() {
-  const {error} = await sb.auth.signInWithOAuth({provider:'discord',options:{redirectTo:location.href}});
-  if(error) toast('Login error: '+error.message,'e');
-}
-async function logout() {
-  await sb.auth.signOut(); currentUser=null; updateUI(null);
-}
-
-function updateUI(user) {
-  currentUser = user;
-  const navR  = document.getElementById('nav-right');
-  const tabs  = document.getElementById('type-tabs');
-  const guest = document.getElementById('section-guest');
-  const editor= document.getElementById('section-editor');
-
-  if(user) {
-    const m = user.user_metadata||{};
-    navR.innerHTML = `<div id="user-pill">
-      <img id="avatar" src="${m.avatar_url||''}" onerror="this.style.display='none'" alt="">
-      <span id="username">${esc(m.full_name||m.name||'Player')}</span>
-      <button class="btn-out" onclick="logout()">Logout</button>
+      if (user) {
+        const m = user.user_metadata || {};
+        navR.innerHTML = `<div id="nav-user">
+      <img id="nav-avatar" src="${m.avatar_url || ''}" onerror="this.style.display='none'" alt="">
+      <span id="nav-name">${esc(m.full_name || m.name || 'Player')}</span>
+      <button class="btn-logout" onclick="logout()">Sign out</button>
     </div>`;
-    tabs.style.display = 'flex';
-    guest.classList.remove('visible');
-    editor.classList.add('visible');
-    loadUserList();
-  } else {
-    navR.innerHTML = `<button class="btn-discord" onclick="loginDiscord()">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.033.055a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
+        guest.classList.remove('visible');
+        editor.classList.add('visible');
+        loadUserList();
+      } else {
+        navR.innerHTML = `<button class="btn btn-discord" onclick="loginDiscord()">
+      <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.033.055a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 13.298 13.298 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
       Login with Discord
     </button>`;
-    tabs.style.display = 'none';
-    guest.classList.add('visible');
-    editor.classList.remove('visible');
-  }
-}
-
-/* ── LOAD ──────────────────────────────── */
-async function loadUserList() {
-  const {data} = await sb.from('tierlists').select('*').eq('user_id',currentUser.id).single();
-  if(data) {
-    document.getElementById('list-title').value = data.title||'';
-    const t = data.list_type||'ranked';
-    if(t==='ranked') {
-      rankedItems = data.ranked_items||[];
-      setType('ranked',false); renderRanked();
-    } else {
-      tieredData   = data.tiered_data   || {S:[],A:[],B:[],C:[],D:[],E:[],F:[]};
-      unrankedItems= data.unranked_items|| [];
-      setType('tiered',false); renderTiered();
+        guest.classList.add('visible');
+        editor.classList.remove('visible');
+      }
     }
-    toast('List loaded','i',1600);
-  }
-}
 
-/* ── SAVE ──────────────────────────────── */
-function requestSave() {
-  if(!currentUser){toast('Login first!','e');return;}
-  document.getElementById('modal-ad').classList.add('open');
-}
-async function confirmSave() {
-  closeModal('modal-ad');
-  const title = document.getElementById('list-title').value.trim()||'My List';
-  const payload = {
-    user_id:currentUser.id, title,
-    list_type:listType,
-    ranked_items:listType==='ranked'?rankedItems:[],
-    tiered_data:listType==='tiered'?tieredData:{},
-    unranked_items:listType==='tiered'?unrankedItems:[],
-    updated_at:new Date().toISOString()
-  };
-  const {error} = await sb.from('tierlists').upsert(payload,{onConflict:'user_id'});
-  if(error){toast('Save failed: '+error.message,'e');return;}
-  toast('✓ Saved!','s');
-}
+    /* ── LOAD ── */
+    async function loadUserList() {
+      const { data } = await sb.from('tierlists').select('*').eq('user_id', currentUser.id).single();
+      if (data) {
+        document.getElementById('list-title').value = data.title || '';
+        if (data.list_type === 'ranked') {
+          rankedItems = data.ranked_items || [];
+          setType('ranked', false); renderRanked();
+        } else {
+          tieredData = data.tiered_data || { S: [], A: [], B: [], C: [], D: [], E: [], F: [] };
+          unrankedItems = data.unranked_items || [];
+          setType('tiered', false); renderTiered();
+        }
+        toast('List loaded', 'i', 1800);
+      }
+    }
 
-/* ── TYPE TABS ─────────────────────────── */
-function setType(type,reset=true) {
-  listType=type;
-  document.querySelectorAll('.type-tab').forEach(t=>t.classList.toggle('active',t.dataset.type===type));
-  document.getElementById('ranked-editor').style.display=type==='ranked'?'':'none';
-  document.getElementById('tiered-editor').style.display=type==='tiered'?'':'none';
-  if(reset){
-    if(type==='ranked'){rankedItems=[];renderRanked();}
-    else{tieredData={S:[],A:[],B:[],C:[],D:[],E:[],F:[]};unrankedItems=[];renderTiered();}
-  }
-}
+    /* ── SAVE ── */
+    function requestSave() {
+      if (!currentUser) { toast('Please log in first', 'e'); return; }
+      document.getElementById('modal-ad').classList.add('open');
+    }
+    async function confirmSave() {
+      closeModal('modal-ad');
+      const title = document.getElementById('list-title').value.trim() || 'My List';
+      const payload = {
+        user_id: currentUser.id, title,
+        list_type: listType,
+        ranked_items: listType === 'ranked' ? rankedItems : [],
+        tiered_data: listType === 'tiered' ? tieredData : {},
+        unranked_items: listType === 'tiered' ? unrankedItems : [],
+        updated_at: new Date().toISOString()
+      };
+      const { error } = await sb.from('tierlists').upsert(payload, { onConflict: 'user_id' });
+      if (error) { toast('Save failed: ' + error.message, 'e'); return; }
+      toast('Saved successfully', 's');
+    }
 
-/* ── RANKED ────────────────────────────── */
-function addRankedItem() {
-  const inp=document.getElementById('ranked-input');
-  const val=inp.value.trim(); if(!val)return;
-  if(rankedItems.length>=25){toast('Max 25 items','e');return;}
-  if(rankedItems.includes(val)){toast('Already in list','e');return;}
-  rankedItems.push(val); inp.value=''; renderRanked();
-}
-function removeRanked(i){rankedItems.splice(i,1);renderRanked();}
-function moveRanked(i,dir){
-  const j=i+dir; if(j<0||j>=rankedItems.length)return;
-  [rankedItems[i],rankedItems[j]]=[rankedItems[j],rankedItems[i]]; renderRanked();
-}
+    /* ── TYPE ── */
+    function setType(type, reset = true) {
+      listType = type;
+      document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+      document.getElementById('ranked-editor').style.display = type === 'ranked' ? '' : 'none';
+      document.getElementById('tiered-editor').style.display = type === 'tiered' ? '' : 'none';
+      if (reset) {
+        if (type === 'ranked') { rankedItems = []; renderRanked(); }
+        else { tieredData = { S: [], A: [], B: [], C: [], D: [], E: [], F: [] }; unrankedItems = []; renderTiered(); }
+      }
+    }
 
-function renderRanked() {
-  const table=document.getElementById('ranked-table');
-  const cnt=document.getElementById('ranked-count');
-  cnt.textContent=rankedItems.length+' / 25';
-  cnt.className='sec-meta'+(rankedItems.length>=25?' warn':'');
+    /* ── RANKED ── */
+    function addRankedItem() {
+      const inp = document.getElementById('ranked-input');
+      const val = inp.value.trim(); if (!val) return;
+      if (rankedItems.length >= 25) { toast('Maximum 25 items', 'e'); return; }
+      if (rankedItems.includes(val)) { toast('Already in the list', 'e'); return; }
+      rankedItems.push(val); inp.value = ''; renderRanked();
+    }
+    function removeRanked(i) { rankedItems.splice(i, 1); renderRanked(); }
+    function moveRanked(i, dir) {
+      const j = i + dir;
+      if (j < 0 || j >= rankedItems.length) return;
+      [rankedItems[i], rankedItems[j]] = [rankedItems[j], rankedItems[i]];
+      renderRanked();
+    }
 
-  table.innerHTML=rankedItems.map((name,i)=>`
-    <div class="ranked-row" draggable="true" data-idx="${i}">
-      <div class="r-rank ${i===0?'gold':i===1?'silver':i===2?'bronze':'plain'}">
-        <span class="rank-num">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</span>
-      </div>
-      <div class="r-name">${esc(name)}</div>
-      <div class="r-actions">
-        <button class="icon-btn" onclick="moveRanked(${i},-1)" title="Move up">▲</button>
-        <button class="icon-btn" onclick="moveRanked(${i},1)"  title="Move down">▼</button>
-        <button class="icon-btn del" onclick="removeRanked(${i})" title="Remove">✕</button>
+    function medalOf(i) {
+      return i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1);
+    }
+    function classOf(i) {
+      return i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'plain';
+    }
+
+    function renderRanked() {
+      const table = document.getElementById('rank-table');
+      const cnt = document.getElementById('rank-count');
+      cnt.textContent = rankedItems.length + ' / 25';
+      cnt.className = 'card-meta' + (rankedItems.length >= 25 ? ' warn' : '');
+
+      if (!rankedItems.length) {
+        table.innerHTML = '<div class="rank-empty">No items yet. Add one above.</div>';
+        renderPodium(); return;
+      }
+
+      table.innerHTML = rankedItems.map((name, i) => `
+    <div class="rank-row" draggable="true" data-i="${i}">
+      <div class="rank-num ${classOf(i)}">${medalOf(i)}</div>
+      <div class="rank-name">${esc(name)}</div>
+      <div class="rank-controls">
+        <button class="btn-icon" onclick="moveRanked(${i},-1)" title="Move up">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+        </button>
+        <button class="btn-icon" onclick="moveRanked(${i},1)" title="Move down">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <button class="btn-icon del" onclick="removeRanked(${i})" title="Remove">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
       </div>
     </div>`).join('');
 
-  if(!rankedItems.length) {
-    table.innerHTML='<div style="padding:24px 12px;color:var(--text3);font-size:13px">No items yet — add some above.</div>';
-  }
-  setupRankedDrag(); renderPodium();
-}
+      setupRankedDrag();
+      renderPodium();
+    }
 
-function setupRankedDrag() {
-  let si=null;
-  document.querySelectorAll('.ranked-row').forEach(row=>{
-    row.addEventListener('dragstart',e=>{si=+row.dataset.idx;row.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
-    row.addEventListener('dragend',()=>row.classList.remove('dragging'));
-    row.addEventListener('dragover',e=>{e.preventDefault();row.classList.add('drag-over');});
-    row.addEventListener('dragleave',()=>row.classList.remove('drag-over'));
-    row.addEventListener('drop',e=>{
-      e.preventDefault();row.classList.remove('drag-over');
-      const di=+row.dataset.idx;
-      if(si!=null&&si!==di){const it=rankedItems.splice(si,1)[0];rankedItems.splice(di,0,it);renderRanked();}
-      si=null;
-    });
-  });
-}
+    function setupRankedDrag() {
+      let si = null;
+      document.querySelectorAll('.rank-row').forEach(row => {
+        row.addEventListener('dragstart', e => { si = +row.dataset.i; row.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+        row.addEventListener('dragend', () => row.classList.remove('dragging'));
+        row.addEventListener('dragover', e => { e.preventDefault(); row.classList.add('drag-over'); });
+        row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+        row.addEventListener('drop', e => {
+          e.preventDefault(); row.classList.remove('drag-over');
+          const di = +row.dataset.i;
+          if (si !== null && si !== di) {
+            const item = rankedItems.splice(si, 1)[0];
+            rankedItems.splice(di, 0, item);
+            renderRanked();
+          }
+          si = null;
+        });
+      });
+    }
 
-/* ── DISPLAY ───────────────────────────── */
-function setDisplay(mode) {
-  displayMode=mode;
-  document.getElementById('disp-normal').classList.toggle('active',mode==='normal');
-  document.getElementById('disp-throne').classList.toggle('active',mode==='throne');
-  document.getElementById('normal-view').style.display=mode==='normal'?'':'none';
-  document.getElementById('throne-wrap').style.display=mode==='throne'?'block':'none';
-}
+    /* ── DISPLAY ── */
+    function setDisplay(mode) {
+      displayMode = mode;
+      document.getElementById('dp-normal').classList.toggle('active', mode === 'normal');
+      document.getElementById('dp-throne').classList.toggle('active', mode === 'throne');
+      document.getElementById('normal-view').style.display = mode === 'normal' ? '' : 'none';
+      document.getElementById('podium-wrap').style.display = mode === 'throne' ? 'block' : 'none';
+    }
 
-function renderPodium() {
-  const top=[rankedItems[0]||null,rankedItems[1]||null,rankedItems[2]||null];
-  // Stage order: 2nd | 1st | 3rd
-  const order=[1,0,2];
-  const crowns=['👑','🥈','🥉'];
-  const labels=['1st','2nd','3rd'];
-  document.getElementById('podium-stage').innerHTML=order.map(idx=>`
-    <div class="podium-col podium-${idx+1}">
-      <div class="podium-crown">${crowns[idx]}</div>
-      <div class="podium-name" style="color:${idx===0?'var(--gold)':idx===1?'var(--silver)':'var(--bronze)'}">${top[idx]?esc(top[idx]):'<span style="color:var(--text3)">—</span>'}</div>
-      <div class="podium-block">${labels[idx]}</div>
+    function renderPodium() {
+      const t = [rankedItems[0] || null, rankedItems[1] || null, rankedItems[2] || null];
+      const order = [1, 0, 2]; // 2nd | 1st | 3rd
+      const medals = ['👑', '🥈', '🥉'];
+      const labels = ['1st', '2nd', '3rd'];
+
+      document.getElementById('podium-stage').innerHTML = order.map(idx => `
+    <div class="pod-col pod-${idx + 1}">
+      <div class="pod-medal">${medals[idx]}</div>
+      <div class="pod-label" style="color:${idx === 0 ? 'var(--gold)' : idx === 1 ? 'var(--silver)' : 'var(--bronze)'}">
+        ${t[idx] ? esc(t[idx]) : '<span style="color:var(--dim)">—</span>'}
+      </div>
+      <div class="pod-block">${labels[idx]}</div>
     </div>`).join('');
 
-  document.getElementById('throne-rest-list').innerHTML=rankedItems.slice(3).map((n,i)=>`
-    <div class="ranked-row" style="cursor:default">
-      <div class="r-rank plain"><span class="rank-num">#${i+4}</span></div>
-      <div class="r-name">${esc(n)}</div>
+      document.getElementById('podium-rest').innerHTML = rankedItems.slice(3).map((n, i) => `
+    <div class="rank-row" style="cursor:default">
+      <div class="rank-num plain">#${i + 4}</div>
+      <div class="rank-name">${esc(n)}</div>
       <div></div>
     </div>`).join('');
-}
+    }
 
-/* ── TIERED ────────────────────────────── */
-function addTierItem() {
-  const inp=document.getElementById('tier-input');
-  const val=inp.value.trim(); if(!val)return;
-  const all=[...unrankedItems,...TIERS.flatMap(t=>tieredData[t]||[])];
-  if(all.includes(val)){toast('Already exists','e');return;}
-  unrankedItems.push(val); inp.value=''; renderTiered();
-}
-function moveTierItem(name,from,to) {
-  if(from==='pool') unrankedItems=unrankedItems.filter(x=>x!==name);
-  else if(tieredData[from]) tieredData[from]=tieredData[from].filter(x=>x!==name);
-  if(to==='pool') unrankedItems.push(name);
-  else if(tieredData[to]!==undefined) tieredData[to].push(name);
-  renderTiered();
-}
-function deleteTierItem(name,from) {
-  if(from==='pool') unrankedItems=unrankedItems.filter(x=>x!==name);
-  else if(tieredData[from]) tieredData[from]=tieredData[from].filter(x=>x!==name);
-  renderTiered();
-}
+    /* ── TIERED ── */
+    function addTierItem() {
+      const inp = document.getElementById('tier-input');
+      const val = inp.value.trim(); if (!val) return;
+      const all = [...unrankedItems, ...TIERS.flatMap(t => tieredData[t] || [])];
+      if (all.includes(val)) { toast('Item already exists', 'e'); return; }
+      unrankedItems.push(val); inp.value = ''; renderTiered();
+    }
+    function moveTierItem(name, from, to) {
+      if (from === 'pool') unrankedItems = unrankedItems.filter(x => x !== name);
+      else if (tieredData[from]) tieredData[from] = tieredData[from].filter(x => x !== name);
+      if (to === 'pool') unrankedItems.push(name);
+      else if (tieredData[to] !== undefined) tieredData[to].push(name);
+      renderTiered();
+    }
+    function deleteTierItem(name, from) {
+      if (from === 'pool') unrankedItems = unrankedItems.filter(x => x !== name);
+      else if (tieredData[from]) tieredData[from] = tieredData[from].filter(x => x !== name);
+      renderTiered();
+    }
 
-function renderTiered() {
-  // Pool
-  const pool=document.getElementById('unranked-pool');
-  pool.innerHTML=unrankedItems.length===0
-    ?'<span class="empty-pool">Add items above and drag them into tiers</span>'
-    :unrankedItems.map(n=>`
-      <div class="chip" draggable="true" data-name="${esc(n)}" data-from="pool">
-        ${esc(n)}<button class="chip-del" onclick="deleteTierItem('${esc(n)}','pool')">✕</button>
-      </div>`).join('');
+    function renderTiered() {
+      const pool = document.getElementById('pool');
+      pool.innerHTML = unrankedItems.length
+        ? unrankedItems.map(n => `
+        <div class="chip" draggable="true" data-name="${esc(n)}" data-from="pool">
+          ${esc(n)}
+          <button class="chip-x" onclick="deleteTierItem('${esc(n)}','pool')">✕</button>
+        </div>`).join('')
+        : '<span class="pool-empty">Add items below</span>';
 
-  // Tiers
-  document.getElementById('tier-rows').innerHTML=TIERS.map(t=>`
-    <div class="tier-row tier-${t.toLowerCase()}">
-      <div class="tier-label-cell">${t}</div>
-      <div class="tier-items-cell" data-drop="${t}">
-        ${(tieredData[t]||[]).map(n=>`
+      document.getElementById('tier-rows').innerHTML = TIERS.map(t => `
+    <div class="tier-row" data-tier="${t}">
+      <div class="tier-tag ${t}">${t}</div>
+      <div class="tier-chips" data-drop="${t}">
+        ${(tieredData[t] || []).map(n => `
           <div class="tier-chip" draggable="true" data-name="${esc(n)}" data-from="${t}">
-            ${esc(n)}<button class="tier-chip-del" onclick="moveTierItem('${esc(n)}','${t}','pool')">✕</button>
+            ${esc(n)}
+            <button class="tier-chip-x" onclick="moveTierItem('${esc(n)}','${t}','pool')">✕</button>
           </div>`).join('')}
       </div>
     </div>`).join('');
 
-  setupTierDrag(); setupCtx();
-}
+      setupTierDrag();
+      setupCtxMenu();
+    }
 
-function setupTierDrag() {
-  let dName=null,dFrom=null;
-  function drag(el){
-    el.addEventListener('dragstart',e=>{dName=el.dataset.name;dFrom=el.dataset.from;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
-    el.addEventListener('dragend',()=>el.classList.remove('dragging'));
-  }
-  function drop(zone,tier){
-    zone.addEventListener('dragover',e=>{e.preventDefault();zone.closest('.tier-row')?.classList.add('drag-active');});
-    zone.addEventListener('dragleave',e=>{if(!zone.contains(e.relatedTarget))zone.closest('.tier-row')?.classList.remove('drag-active');});
-    zone.addEventListener('drop',e=>{
-      e.preventDefault();zone.closest('.tier-row')?.classList.remove('drag-active');
-      if(dName&&dFrom!==tier)moveTierItem(dName,dFrom,tier);dName=dFrom=null;
-    });
-  }
-  document.querySelectorAll('.chip,.tier-chip').forEach(drag);
-  document.querySelectorAll('[data-drop]').forEach(el=>drop(el,el.dataset.drop));
-  const pool=document.getElementById('unranked-pool');
-  pool.addEventListener('dragover',e=>{e.preventDefault();pool.classList.add('drag-active');});
-  pool.addEventListener('dragleave',e=>{if(!pool.contains(e.relatedTarget))pool.classList.remove('drag-active');});
-  pool.addEventListener('drop',e=>{e.preventDefault();pool.classList.remove('drag-active');if(dName&&dFrom!=='pool')moveTierItem(dName,dFrom,'pool');dName=dFrom=null;});
-}
+    function setupTierDrag() {
+      let dName = null, dFrom = null;
 
-/* ── CONTEXT MENU ──────────────────────── */
-function setupCtx() {
-  document.querySelectorAll('.chip,.tier-chip').forEach(el=>{
-    el.addEventListener('contextmenu',e=>{
-      e.preventDefault();
-      ctxName=el.dataset.name; ctxFrom=el.dataset.from;
-      showCtx(e.clientX,e.clientY);
-    });
-  });
-}
-function showCtx(x,y) {
-  const menu=document.getElementById('ctx');
-  document.getElementById('ctx-name').textContent=ctxName;
-  document.getElementById('ctx-tier-list').innerHTML=TIERS.map(t=>`
-    <div class="ctx-item" onclick="moveTierItem('${esc(ctxName)}','${ctxFrom}','${t}');hideCtx()">
-      <span class="ctx-tier-dot" style="background:${TIER_COLORS[t]}"></span>Move to ${t}
+      const drag = el => {
+        el.addEventListener('dragstart', e => {
+          dName = el.dataset.name; dFrom = el.dataset.from;
+          el.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move';
+        });
+        el.addEventListener('dragend', () => el.classList.remove('dragging'));
+      };
+
+      const dropZone = (zone, tier) => {
+        const row = zone.closest('.tier-row');
+        zone.addEventListener('dragover', e => { e.preventDefault(); row?.classList.add('over'); });
+        zone.addEventListener('dragleave', e => { if (!zone.contains(e.relatedTarget)) row?.classList.remove('over'); });
+        zone.addEventListener('drop', e => {
+          e.preventDefault(); row?.classList.remove('over');
+          if (dName && dFrom !== tier) moveTierItem(dName, dFrom, tier);
+          dName = dFrom = null;
+        });
+      };
+
+      document.querySelectorAll('.chip, .tier-chip').forEach(drag);
+      document.querySelectorAll('[data-drop]').forEach(el => dropZone(el, el.dataset.drop));
+
+      const pool = document.getElementById('pool');
+      pool.addEventListener('dragover', e => { e.preventDefault(); pool.classList.add('over'); });
+      pool.addEventListener('dragleave', e => { if (!pool.contains(e.relatedTarget)) pool.classList.remove('over'); });
+      pool.addEventListener('drop', e => {
+        e.preventDefault(); pool.classList.remove('over');
+        if (dName && dFrom !== 'pool') moveTierItem(dName, dFrom, 'pool');
+        dName = dFrom = null;
+      });
+    }
+
+    /* ── CONTEXT MENU ── */
+    function setupCtxMenu() {
+      document.querySelectorAll('.chip, .tier-chip').forEach(el => {
+        el.addEventListener('contextmenu', e => {
+          e.preventDefault();
+          ctxName = el.dataset.name; ctxFrom = el.dataset.from;
+          openCtx(e.clientX, e.clientY);
+        });
+      });
+    }
+    function openCtx(x, y) {
+      document.getElementById('ctx-label').textContent = ctxName;
+      document.getElementById('ctx-tiers').innerHTML = TIERS.map(t => `
+    <div class="ctx-item" onclick="moveTierItem('${esc(ctxName)}','${ctxFrom}','${t}');closeCtx()">
+      <span class="ctx-dot" style="background:${TIER_COLORS[t]}"></span> Move to ${t}
     </div>`).join('');
-  document.getElementById('ctx-pool').onclick=()=>{moveTierItem(ctxName,ctxFrom,'pool');hideCtx();};
-  document.getElementById('ctx-del').onclick=()=>{deleteTierItem(ctxName,ctxFrom);hideCtx();};
-  menu.style.left=Math.min(x,window.innerWidth-180)+'px';
-  menu.style.top=Math.min(y,window.innerHeight-320)+'px';
-  menu.classList.add('open');
-  setTimeout(()=>document.addEventListener('click',hideCtx,{once:true}),10);
-}
-function hideCtx(){document.getElementById('ctx').classList.remove('open');}
+      document.getElementById('ctx-pool-btn').onclick = () => { moveTierItem(ctxName, ctxFrom, 'pool'); closeCtx(); };
+      document.getElementById('ctx-del-btn').onclick = () => { deleteTierItem(ctxName, ctxFrom); closeCtx(); };
 
-/* ── PREVIEW ───────────────────────────── */
-function openPreview() {
-  const title=document.getElementById('list-title').value||'My List';
-  document.getElementById('preview-title-label').textContent=title;
-  document.getElementById('preview-type-label').textContent=listType==='ranked'?'🏅 Ranked':'📊 Tiered S–F';
-  let html='';
-  if(listType==='ranked'){
-    if(!rankedItems.length){html='<div style="padding:20px;color:var(--text3);font-size:13px">No items yet.</div>';}
-    else html=rankedItems.map((n,i)=>`
-      <div class="preview-row">
-        <div class="preview-rank" style="color:${i===0?'var(--gold)':i===1?'var(--silver)':i===2?'var(--bronze)':'var(--text3)'}">
-          ${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}
+      const menu = document.getElementById('ctx');
+      menu.style.left = Math.min(x, window.innerWidth - 190) + 'px';
+      menu.style.top = Math.min(y, window.innerHeight - 340) + 'px';
+      menu.classList.add('open');
+      setTimeout(() => document.addEventListener('click', closeCtx, { once: true }), 10);
+    }
+    function closeCtx() { document.getElementById('ctx').classList.remove('open'); }
+
+    /* ── PREVIEW ── */
+    function openPreview() {
+      const title = document.getElementById('list-title').value || 'My List';
+      document.getElementById('prev-title').textContent = title;
+      document.getElementById('prev-sub').textContent = listType === 'ranked' ? 'Ranked list' : 'Tiered S–F';
+
+      let html = '';
+      if (listType === 'ranked') {
+        html = !rankedItems.length
+          ? '<p style="color:var(--dim);font-size:13px;padding:16px 0">No items yet.</p>'
+          : rankedItems.map((n, i) => `
+          <div class="prev-row">
+            <div class="prev-num" style="color:${i === 0 ? 'var(--gold)' : i === 1 ? 'var(--silver)' : i === 2 ? 'var(--bronze)' : 'var(--dim)'}">
+              ${medalOf(i)}
+            </div>
+            <div class="prev-name">${esc(n)}</div>
+          </div>`).join('');
+      } else {
+        html = TIERS.map(t => `
+      <div class="prev-tier-row">
+        <div class="prev-tier-tag" style="color:${TIER_COLORS[t]}">${t}</div>
+        <div class="prev-tier-chips">
+          ${(tieredData[t] || []).map(n => `<span class="prev-chip">${esc(n)}</span>`).join('')}
+          ${!(tieredData[t] || []).length ? '<span style="color:var(--dim);font-size:12px">—</span>' : ''}
         </div>
-        <div class="preview-name">${esc(n)}</div>
       </div>`).join('');
-  } else {
-    html=TIERS.map(t=>`
-      <div class="preview-tier-row">
-        <div class="preview-tier-label" style="color:${TIER_COLORS[t]}">${t}</div>
-        <div class="preview-tier-items">
-          ${(tieredData[t]||[]).map(n=>`<span class="preview-chip">${esc(n)}</span>`).join('')}
-          ${!(tieredData[t]||[]).length?'<span style="color:var(--text3);font-size:12px">—</span>':''}
-        </div>
-      </div>`).join('');
-  }
-  document.getElementById('preview-body').innerHTML=html;
-  document.getElementById('modal-preview').classList.add('open');
-}
+      }
+      document.getElementById('prev-body').innerHTML = html;
+      document.getElementById('modal-preview').classList.add('open');
+    }
 
-/* ── SHARE ─────────────────────────────── */
-function openShare(){
-  if(!currentUser){toast('Save your list first!','e');return;}
-  const url=location.origin+location.pathname+'?view='+encodeURIComponent(currentUser.id);
-  document.getElementById('share-url').value=url;
-  document.getElementById('modal-share').classList.add('open');
-}
-function copyShare(){
-  document.getElementById('share-url').select();
-  document.execCommand('copy');
-  toast('Link copied!','s',1600);
-}
+    /* ── SHARE ── */
+    function openShare() {
+      if (!currentUser) { toast('Log in to share your list', 'e'); return; }
+      const url = location.origin + location.pathname + '?view=' + encodeURIComponent(currentUser.id);
+      document.getElementById('share-url').value = url;
+      document.getElementById('modal-share').classList.add('open');
+    }
+    function copyShare() {
+      const f = document.getElementById('share-url');
+      f.select(); document.execCommand('copy');
+      toast('Link copied to clipboard', 's', 1800);
+    }
 
-/* ── CLEAR ─────────────────────────────── */
-function clearList(){
-  if(!confirm('Clear all items?'))return;
-  rankedItems=[];tieredData={S:[],A:[],B:[],C:[],D:[],E:[],F:[]};unrankedItems=[];
-  renderRanked();renderTiered();toast('Cleared','i');
-}
+    /* ── CLEAR ── */
+    function clearList() {
+      if (!confirm('Clear all items from this list?')) return;
+      rankedItems = []; tieredData = { S: [], A: [], B: [], C: [], D: [], E: [], F: [] }; unrankedItems = [];
+      renderRanked(); renderTiered(); toast('List cleared', 'i');
+    }
 
-/* ── BOTTOM NAV ────────────────────────── */
-function bnav(action){
-  if(action==='home'){}
-  else if(action==='preview')openPreview();
-  else if(action==='share')openShare();
-  else if(action==='save')requestSave();
-}
+    /* ── MODALS ── */
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    document.querySelectorAll('.overlay').forEach(o =>
+      o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); })
+    );
 
-/* ── MODAL ─────────────────────────────── */
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+    /* ── PUBLIC VIEW ── */
+    async function tryPublicView() {
+      const uid = new URLSearchParams(location.search).get('view');
+      if (!uid) return false;
 
-/* ── PUBLIC VIEW ───────────────────────── */
-async function tryPublicView(){
-  const uid=new URLSearchParams(location.search).get('view');
-  if(!uid)return false;
-  document.getElementById('loading').style.display='flex';
-  const{data}=await sb.from('tierlists').select('*').eq('user_id',uid).single();
-  document.getElementById('loading').style.display='none';
-  if(!data){
-    document.body.innerHTML=`<div style="font-family:Inter,sans-serif;background:#0d0d0d;color:#f1f1f1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px">
-      <div style="font-size:2rem;font-weight:800">SkillTiers<span style="color:#e63946">.</span></div>
-      <p style="color:#666">List not found.</p>
-      <a href="${location.pathname}" style="color:#e63946;font-size:13px">← Go home</a>
-    </div>`;
-    return true;
-  }
-  const t=data.list_type;
-  let content='';
-  if(t==='ranked'){
-    content=`<div style="border:1px solid #2a2a2a;border-radius:6px;overflow:hidden">
-      <div style="display:grid;grid-template-columns:48px 1fr;padding:6px 12px;border-bottom:1px solid #2a2a2a;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666"># Name</div>
-      ${(data.ranked_items||[]).map((n,i)=>`
-        <div style="display:grid;grid-template-columns:48px 1fr;padding:10px 12px;border-bottom:1px solid #1e1e1e;align-items:center">
-          <div style="font-size:13px;font-weight:700;color:${i===0?'#f4c542':i===1?'#b0b8c1':i===2?'#cd7f32':'#555'}">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</div>
-          <div style="font-size:14px;font-weight:600">${esc(n)}</div>
+      document.getElementById('loading').style.display = 'flex';
+      const { data } = await sb.from('tierlists').select('*').eq('user_id', uid).single();
+      document.getElementById('loading').style.display = 'none';
+
+      if (!data) {
+        document.body.innerHTML = `
+      <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#09090b;color:#fafafa;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;}</style>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+      <div style="font-size:1.2rem;font-weight:800">SkillTiers<span style="color:#06b6d4">.</span></div>
+      <p style="color:#71717a;font-size:14px">That list doesn't exist yet.</p>
+      <a href="${location.pathname}" style="color:#06b6d4;font-size:13px;text-decoration:none">← Back home</a>`;
+        return true;
+      }
+
+      const T = data.list_type;
+      const TC = { S: '#f87171', A: '#fb923c', B: '#facc15', C: '#4ade80', D: '#60a5fa', E: '#a78bfa', F: '#71717a' };
+
+      let content = '';
+      if (T === 'ranked') {
+        content = `<div style="border:1px solid #27272a;border-radius:12px;overflow:hidden">
+      ${(data.ranked_items || []).map((n, i) => `
+        <div style="display:grid;grid-template-columns:52px 1fr;padding:11px 18px;border-bottom:1px solid #1f1f23;align-items:center;font-family:'Inter',sans-serif">
+          <span style="font-size:13px;font-weight:700;color:${i === 0 ? '#eab308' : i === 1 ? '#94a3b8' : i === 2 ? '#b45309' : '#52525b'}">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '#' + (i + 1)}</span>
+          <span style="font-size:14px;font-weight:500">${esc(n)}</span>
         </div>`).join('')}
     </div>`;
-  } else {
-    content=`<div style="border:1px solid #2a2a2a;border-radius:6px;overflow:hidden">
-      ${TIERS.map(tier=>{
-        const items=data.tiered_data[tier]||[];
-        const COLORS={S:'#e63946',A:'#f4a261',B:'#e9c46a',C:'#2a9d8f',D:'#457b9d',E:'#9b5de5',F:'#555'};
-        return`<div style="display:flex;align-items:stretch;border-bottom:1px solid #1e1e1e">
-          <div style="width:52px;min-width:52px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:${COLORS[tier]};border-right:1px solid #2a2a2a">${tier}</div>
-          <div style="flex:1;display:flex;flex-wrap:wrap;gap:5px;padding:8px 12px;align-items:center">
-            ${items.map(n=>`<span style="background:#1e1e1e;border:1px solid #333;border-radius:4px;padding:2px 9px;font-size:13px;font-weight:600">${esc(n)}</span>`).join('')}
-            ${!items.length?`<span style="color:#555;font-size:12px">—</span>`:''}
+      } else {
+        content = `<div style="border:1px solid #27272a;border-radius:12px;overflow:hidden">
+      ${['S', 'A', 'B', 'C', 'D', 'E', 'F'].map(t => {
+          const items = (data.tiered_data || {})[t] || [];
+          return `<div style="display:flex;align-items:stretch;border-bottom:1px solid #1f1f23;min-height:46px">
+          <div style="width:52px;min-width:52px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:${TC[t]};border-right:1px solid #27272a">${t}</div>
+          <div style="flex:1;display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px;align-items:center">
+            ${items.map(n => `<span style="background:#18181b;border:1px solid #27272a;border-radius:5px;padding:2px 9px;font-size:13px;font-weight:500">${esc(n)}</span>`).join('')}
+            ${!items.length ? '<span style="color:#52525b;font-size:12px">—</span>' : ''}
           </div>
         </div>`;
-      }).join('')}
+        }).join('')}
     </div>`;
-  }
-  document.body.innerHTML=`
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#0d0d0d;color:#f1f1f1;min-height:100vh;}</style>
-  <div style="border-bottom:1px solid #2a2a2a;padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between;background:#111;position:sticky;top:0;z-index:10">
-    <div style="font-size:1.1rem;font-weight:800">SkillTiers<span style="color:#e63946">.</span></div>
-    <a href="${location.pathname}" style="font-size:12px;color:#aaa;text-decoration:none">← Home</a>
-  </div>
-  <div style="max-width:700px;margin:0 auto;padding:32px 16px 80px">
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#e63946;margin-bottom:8px">${t==='ranked'?'Ranked':'Tiered S–F'}</div>
-    <h1 style="font-size:1.8rem;font-weight:800;letter-spacing:-.5px;margin-bottom:4px">${esc(data.title||'Tierlist')}</h1>
-    <p style="color:#555;font-size:12px;margin-bottom:24px">Last updated ${new Date(data.updated_at).toLocaleDateString()}</p>
-    ${content}
-    <div style="margin-top:40px;text-align:center">
-      <a href="${location.pathname}" style="display:inline-block;background:#e63946;color:#fff;text-decoration:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:700">
-        Create Your Own List →
-      </a>
+      }
+
+      document.body.innerHTML = `
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap" rel="stylesheet">
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'Inter',sans-serif;background:#09090b;color:#fafafa;min-height:100vh;}
+      ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#3f3f46;border-radius:99px}
+    </style>
+    <div style="position:sticky;top:0;z-index:10;height:56px;background:rgba(9,9,11,.9);backdrop-filter:blur(12px);border-bottom:1px solid #27272a;display:flex;align-items:center;padding:0 24px;justify-content:space-between">
+      <span style="font-size:16px;font-weight:800;letter-spacing:-.4px">SkillTiers<span style="color:#06b6d4">.</span></span>
+      <a href="${location.pathname}" style="font-size:12px;color:#71717a;text-decoration:none;border:1px solid #27272a;border-radius:6px;padding:4px 12px">← Home</a>
     </div>
-  </div>`;
-  return true;
-}
+    <div style="max-width:680px;margin:0 auto;padding:36px 20px 80px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#06b6d4;margin-bottom:8px">${T === 'ranked' ? 'Ranked' : 'Tiered S–F'}</div>
+      <h1 style="font-size:1.9rem;font-weight:800;letter-spacing:-.6px;line-height:1.1;margin-bottom:6px">${esc(data.title || 'Tierlist')}</h1>
+      <p style="color:#52525b;font-size:12px;margin-bottom:28px">Updated ${new Date(data.updated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+      ${content}
+      <div style="margin-top:48px;text-align:center">
+        <a href="${location.pathname}" style="display:inline-flex;align-items:center;gap:8px;background:#06b6d4;color:#000;text-decoration:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:700">
+          Create your own list →
+        </a>
+      </div>
+    </div>`;
+      return true;
+    }
 
-/* ── UTIL ──────────────────────────────── */
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    /* ── UTIL ── */
+    function esc(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 
-/* ── KEYBOARD ──────────────────────────── */
-document.getElementById('ranked-input').addEventListener('keydown',e=>{if(e.key==='Enter')addRankedItem();});
-document.getElementById('tier-input').addEventListener('keydown',e=>{if(e.key==='Enter')addTierItem();});
+    /* ── KEYBOARD ── */
+    document.getElementById('ranked-input').addEventListener('keydown', e => { if (e.key === 'Enter') addRankedItem(); });
+    document.getElementById('tier-input').addEventListener('keydown', e => { if (e.key === 'Enter') addTierItem(); });
 
-/* ── BOOT ──────────────────────────────── */
-(async()=>{
-  const isView=await tryPublicView();
-  if(isView)return;
-  document.getElementById('loading').style.display='none';
-  const{data:{session}}=await sb.auth.getSession();
-  updateUI(session?.user||null);
-  sb.auth.onAuthStateChange((_,s)=>updateUI(s?.user||null));
-})();
-</script>
+    /* ── BOOT ── */
+    (async () => {
+      const isView = await tryPublicView();
+      if (isView) return;
+      document.getElementById('loading').style.display = 'none';
+      const { data: { session } } = await sb.auth.getSession();
+      updateUI(session?.user || null);
+      sb.auth.onAuthStateChange((_, s) => updateUI(s?.user || null));
+    })();
+  </script>
 </body>
+
 </html>
